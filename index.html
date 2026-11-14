@@ -208,6 +208,8 @@ details.mais{margin-top:16px;border-top:1px solid var(--borda);padding-top:8px}d
 .adm-lista .adm-fisio .topo-lista{align-items:flex-start;gap:12px}
 .adm-lista .adm-fisio .dados{margin:10px 0 4px}
 .adm-lista .adm-fisio .acoes-item{flex-wrap:wrap}
+.lg-termo{display:flex;gap:10px;align-items:flex-start;font-weight:400;font-size:15px;line-height:1.4;margin:14px 0 4px;color:var(--ink)}
+.lg-termo input{width:22px;height:22px;min-height:0;margin:1px 0 0;flex:none;accent-color:var(--cor)}
 </style>
 </head>
 <body>
@@ -419,7 +421,7 @@ const { addDays, parseHHmm, weekdayOf, zonedToUtc, utcToLocalDate, overlaps, fit
 /* ===== Dados: tudo fica neste aparelho (localStorage), no padrão do agenda-v1 ===== */
 /* Cole aqui o endereço do App da Web (termina em /exec). Vazio = só neste aparelho. */
 const URL_API = String(window.FISIOAGENDA_URL || "").trim();
-const VERSAO = "1.1.0";
+const VERSAO = "1.2.0";
 const DEMO = false;
 const TZ = "America/Sao_Paulo", CHAVE = "fisioagenda-v1:dados", CHAVE_BACKUP = "fisioagenda-v1:ultimoBackup", CH_SESSAO = "fisioagenda-v1:sessao", CH_SYNC = "fisioagenda-v1:sync", CH_DICAS = "fisioagenda-v1:dicas";
 const novo = () => ({ versao: 1, perfil: { nome: "" }, excluidos: {}, recomendacoes: [], documentos: [], pacientes: [], consultas: [], series: [], anotacoes: [], bloqueios: [], excecoes: [],
@@ -632,13 +634,17 @@ function blocoAtencao() {
   const l = precisaAtencao(); if (!l.length) return "";
   return `<div class="bloco"><h2>Precisam de atenção</h2><ul class="lista">${l.map((x) => `<li class="pac" style="cursor:default"><div><b>${esc(x.p.nome)}</b><small>${esc(x.txt)}</small></div><button class="btn" data-a="novaC" data-p="${x.p.id}">Marcar</button></li>`).join("")}</ul></div>`;
 }
+function blocoAssin() {
+  const a = avisoAssin; if (!a || !ehFisio()) return "";
+  return `<div class="conflito ${a.dias < 0 ? "e" : ""}" style="margin-bottom:12px">${a.dias < 0 ? `Sua assinatura venceu em ${a.vencimento.split("-").reverse().join("/")}.` : `Sua assinatura vence ${a.dias === 0 ? "hoje" : `em ${a.dias} dia${a.dias === 1 ? "" : "s"}`}.`} Fale com o administrador para renovar. Seus dados continuam guardados.</div>`;
+}
 function rInicio() {
   const h = hoje(), mes = h.slice(0, 7), agora = Date.now(), lista = doDia(h).filter(ativas), noMes = dados.consultas.filter((c) => c.data.slice(0, 7) === mes);
   const feitas = lista.filter((c) => c.status === "done").length, prox = lista.find((c) => c.status === "confirmed" && iniMs(c.data, c.hora) >= agora);
   const dias = dados.consultas.filter((c) => c.status === "confirmed" && c.data > h).sort(ordC).slice(0, 5);
   const res = [[dados.consultas.filter((c) => c.status === "confirmed" && iniMs(c.data, c.hora) >= agora).length, "agendadas"], [noMes.filter((c) => c.status === "done").length, "realizadas no mês"], [noMes.filter((c) => c.status === "cancelled").length, "canceladas no mês"], [dados.pacientes.filter((p) => p.status === "Ativo").length, "pacientes ativos"]];
   const pct = lista.length ? Math.round((feitas / lista.length) * 100) : 0;
-  return `${DEMO ? '<div class="aviso">Demonstração com dados fictícios. Não digite dados reais: tudo é apagado ao recarregar.</div>' : avisoBackup()}${avisoChoques()}${avisoSeries()}<div class="colunas"><div>
+  return `${DEMO ? '<div class="aviso">Demonstração com dados fictícios. Não digite dados reais: tudo é apagado ao recarregar.</div>' : avisoBackup()}${blocoAssin()}${avisoChoques()}${avisoSeries()}<div class="colunas"><div>
   <div class="hero"><small>${dLonga(h)}</small><div class="g"><b>${lista.length}</b> ${lista.length === 1 ? "atendimento" : "atendimentos"} hoje</div>${lista.length ? `<div class="tr"><i style="width:${pct}%"></i></div>` : ""}<p>${prox ? `Próximo às <b>${prox.hora}</b>: ${esc(nomeP(prox.pacienteId))}` : lista.length ? "Nenhum outro atendimento hoje." : "Sua agenda de hoje está livre."}</p></div>
   <div class="atalhos">${at("novaC", "Nova consulta", "mais", "prim")}${at("novoP", "Novo paciente", "novoP")}${at("novaS", "Série recorrente", "serie")}${at("novoB", "Bloquear horário", "bloquear")}${at("registrar", "Registrar atendimento já feito", "registrar", "larga")}${paraFechar().length ? at("fecharDia", `Fechar o dia (${paraFechar().length})`, "fechar", "larga") : ""}</div>
   ${dica("recorrente", "Atende o mesmo paciente toda semana? Use <b>Série recorrente</b> e a agenda se preenche sozinha.")}
@@ -765,13 +771,23 @@ function trocarFoto(arq) {
   im.onload = () => { const L = 240, c = document.createElement("canvas"); c.width = c.height = L; const m = Math.min(im.width, im.height); c.getContext("2d").drawImage(im, (im.width - m) / 2, (im.height - m) / 2, m, m, 0, 0, L, L); URL.revokeObjectURL(u); dados.perfil.foto = c.toDataURL("image/jpeg", 0.8); gravar(); atualizarTudo(); toast("Foto salva"); };
   im.onerror = () => toast("Não foi possível abrir a imagem."); im.src = u;
 }
+const nomeQuem = (id) => id === "fisio" ? "Fisioterapeuta" : id === "admin" ? "Administrador" : id === "desconhecido" ? "Desconhecido" : (pac(id) || {}).nome || "Paciente removido";
+const nomeAlvo = (id) => id ? (pac(id) || {}).nome || (/^[A-Z]{2}-/.test(id) ? id : "paciente removido") : "";
 async function abrirAuditoria() {
   abrir("Histórico de acessos", '<div class="bloco"><p class="vazio">Carregando...</p></div>');
   try {
-    const j = await api("auditoria", { token: sessao.token }), nome = (id) => id === "fisio" ? "Fisioterapeuta" : id === "admin" ? "Administrador" : id === "desconhecido" ? "Desconhecido" : (pac(id) || {}).nome || "Paciente removido";
-    abrir("Histórico de acessos", `<div class="bloco">${j.itens.length ? `<ul class="lista">${j.itens.map((x) => `<li><b>${esc(nome(x.quem))}</b>: ${esc(x.acao)}${x.alvo ? ` (${esc((pac(x.alvo) || {}).nome || x.alvo)})` : ""}<small>${new Date(x.em).toLocaleString("pt-BR")}</small></li>`).join("")}</ul>` : '<p class="vazio">Nenhum registro ainda.</p>'}</div>`);
+    const j = await api("auditoria", { token: sessao.token });
+    abrir("Histórico de acessos", `<div class="bloco"><p class="dica">Acessos e alterações feitos por você e pelos seus pacientes. O histórico não guarda o conteúdo das anotações nem dos cadastros.</p><div class="acoes-item"><button class="btn" data-a="verifHist">Verificar integridade</button><button class="btn" data-a="exportHist">Exportar planilha</button></div><div id="verifRes"></div>${j.itens.length ? `<ul class="lista">${j.itens.map((x) => `<li><b>${esc(nomeQuem(x.quem))}</b>: ${esc(x.acao)}${x.alvo ? ` (${esc(nomeAlvo(x.alvo))})` : ""}<small>${new Date(x.em).toLocaleString("pt-BR")}</small></li>`).join("")}</ul>` : '<p class="vazio">Nenhum registro ainda.</p>'}</div>`);
   } catch (e) { abrir("Histórico de acessos", `<div class="conflito e">${esc(e.message)}</div>`); }
 }
+/* Planilha CSV (abre no Excel e no Google Planilhas). */
+function baixarCsv(nome, linhas) {
+  const cel = (v) => { const t = String(v == null ? "" : v); return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const txt = "﻿" + linhas.map((l) => l.map(cel).join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/csv;charset=utf-8" })); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+const dataHora = (iso) => new Date(iso).toLocaleString("pt-BR");
+function resultadoVerif(ok, motivo, total) { return ok ? `<div class="conflito ok">Histórico íntegro: ${total} registros conferidos, nenhum alterado ou apagado.</div>` : `<div class="conflito e">Histórico com sinal de alteração: ${esc(motivo)}. Avise o administrador.</div>`; }
 function rAjustes() {
   const d = dados.disp, u = localStorage.getItem(CHAVE_BACKUP), ops = (l, v) => l.map((n) => `<option ${n == v ? "selected" : ""}>${n}</option>`).join("");
   const reg = d.regras.map((r, i) => `<div class="reg"><b>${DIAS[r.weekday].slice(0, 3)}</b><input type="time" data-reg="${i}" data-c="start" value="${r.start}" aria-label="Início"><input type="time" data-reg="${i}" data-c="end" value="${r.end}" aria-label="Fim"><button class="link" data-a="tiraReg" data-i="${i}">Remover</button></div>`).join("");
@@ -852,6 +868,7 @@ function abrirComoUsar() {
 /* ===== Google Drive (Apps Script) ===== */
 let sessao = null; try { sessao = URL_API ? JSON.parse(localStorage.getItem(CH_SESSAO)) : null; } catch (e) {}
 let sync = { versao: 0, pendente: false }; try { sync = { ...sync, ...JSON.parse(localStorage.getItem(CH_SYNC)) }; } catch (e) {}
+let avisoAssin = null;
 let enviando = false, edicao = 0, timerSync = 0, estadoSync = "", ultimaOk = 0, primeiraLeitura = true;
 const guardarSync = () => { try { localStorage.setItem(CH_SYNC, JSON.stringify(sync)); } catch (e) {} };
 function textoSync() {
@@ -893,6 +910,7 @@ async function sincronizar() {
   enviando = true; clearTimeout(timerSync); estadoSync = "indo"; pintarTopo();
   try {
     const r = await api("ler", { token: sessao.token, desde: sync.versao });
+    avisoAssin = r.assinatura || null;
     if (r.versao === 0 && (dados.pacientes.length || dados.consultas.length)) sync.pendente = true;
     if (r.dados) aplicarRemoto(r); else sync.versao = r.versao;
     if (expirarPendentes()) gravar();
@@ -1008,11 +1026,36 @@ async function admAcao(acao, extra, ok) {
 }
 const admFisio = (id) => (admSt && admSt.fisios || []).find((f) => f.id === id);
 const quandoAdm = (t) => t ? new Date(t).toLocaleString("pt-BR") : "nunca";
+const brl = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const dBr = (s) => s ? s.split("-").reverse().join("/") : "";
+function textoAssin(a) {
+  if (!a || a.situacao === "sem") return a && (a.plano || a.valor) ? `${esc(a.plano || "Plano")}, ${brl(a.valor)}, sem vencimento definido` : "não definida";
+  const sit = a.situacao === "vencida" ? `<span class="tag cancelled">Vencida há ${-a.dias} dia${a.dias === -1 ? "" : "s"}</span>` : a.situacao === "vence" ? `<span class="tag pending">Vence ${a.dias === 0 ? "hoje" : `em ${a.dias} dia${a.dias === 1 ? "" : "s"}`}</span>` : '<span class="tag Ativo">Em dia</span>';
+  return `${esc(a.plano || "Plano")}, ${brl(a.valor)}, vence em ${dBr(a.vencimento)} ${sit}`;
+}
+function formAssinatura(f) {
+  const a = f.assinatura || {};
+  abrir("Assinatura de " + f.nome, `<form novalidate class="bloco" data-assin="${f.id}"><label for="sP">Plano</label><input id="sP" name="plano" value="${esc(a.plano || "")}" placeholder="Ex.: Mensal"><label for="sV">Valor por mês (R$)</label><input id="sV" name="valor" inputmode="decimal" value="${a.valor ? String(a.valor).replace(".", ",") : ""}"><label for="sD">Próximo vencimento</label><input id="sD" name="vencimento" type="date" value="${a.vencimento || ""}"><p class="dica">O controle é manual: o app não cobra nem bloqueia sozinho. Três dias antes do vencimento, o fisioterapeuta recebe um e-mail, e ele vê um aviso no app quando faltar pouco ou já tiver vencido.</p><div class="erro" id="sErro" hidden></div><div class="acoes-form"><button class="salvar">Salvar assinatura</button></div></form>${(a.pagamentos || []).length ? `<div class="bloco"><h2>Últimos pagamentos</h2><ul class="lista">${a.pagamentos.slice().reverse().map((x) => `<li>${brl(x.valor)} por ${x.meses} ${x.meses > 1 ? "meses" : "mês"}, até ${dBr(x.ate)}<small>${new Date(x.em).toLocaleDateString("pt-BR")}</small></li>`).join("")}</ul></div>` : ""}`);
+}
+function formPagamento(f) {
+  const a = f.assinatura || {};
+  abrir("Registrar pagamento", `<form novalidate class="bloco" data-pag="${f.id}"><p style="margin:0"><b>${esc(f.nome)}</b></p><p class="dica">${a.vencimento ? `Vencimento atual: ${dBr(a.vencimento)}.` : "Sem vencimento definido: conta a partir de hoje."} O vencimento avança pelos meses pagos.</p><label for="pV">Valor recebido (R$)</label><input id="pV" name="valor" inputmode="decimal" value="${a.valor ? String(a.valor).replace(".", ",") : ""}"><label for="pM">Meses pagos</label><select id="pM" name="meses">${[1, 2, 3, 6, 12].map((m) => `<option value="${m}">${m} ${m > 1 ? "meses" : "mês"}</option>`).join("")}</select><div class="erro" id="pErro" hidden></div><div class="acoes-form"><button class="salvar">Registrar pagamento</button></div></form>`);
+}
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("[data-assin],[data-pag]"); if (!f) return; e.preventDefault(); e.stopImmediatePropagation();
+  const v = Object.fromEntries(new FormData(f)), pag = !!f.dataset.pag, er = $(pag ? "pErro" : "sErro"), b = f.querySelector(".salvar");
+  b.disabled = true;
+  try {
+    admSt = await api(pag ? "admPagamento" : "admAssinatura", { token: sessao.token, id: f.dataset.pag || f.dataset.assin, ...v });
+    admErro = ""; fechar(); toast(pag ? "Pagamento registrado" : "Assinatura salva"); rAdm();
+    const lg = await api("admAuditoria", { token: sessao.token }); admLog = lg.itens; rAdm();
+  } catch (x) { if (admSessaoCaiu(x)) return; er.textContent = x.message; er.hidden = false; } finally { if (b.isConnected) b.disabled = false; }
+}, true);
 function situacaoFisio(f) { return f.status === "bloqueado" ? '<span class="tag cancelled">Bloqueado</span>' : f.temSenha ? '<span class="tag Ativo">Ativo</span>' : '<span class="tag pending">Aguardando criar senha</span>'; }
 function cartaoFisio(f) {
   return `<li class="adm-fisio"><div class="topo-lista"><div><b>${esc(f.nome)}</b><div class="dica" style="margin:2px 0 0">${esc(f.email)}</div></div>${situacaoFisio(f)}</div>
-  <div class="dados"><div><span>Pacientes ativos:</span> ${f.pacientes}</div><div><span>Com acesso ao portal:</span> ${f.pacientesComAcesso}</div><div><span>Último acesso:</span> ${quandoAdm(f.ultimo)}</div><div><span>Aparelhos conectados:</span> ${f.sessoes}</div></div>
-  <div class="acoes-item"><button class="btn" data-a="admEdit" data-id="${f.id}">Editar</button><button class="btn ${f.status === "bloqueado" ? "prim" : "per"}" data-a="admBloq" data-id="${f.id}">${f.status === "bloqueado" ? "Desbloquear" : "Bloquear"}</button><button class="btn" data-a="admEnc" data-id="${f.id}" ${f.sessoes ? "" : "disabled"}>Desconectar aparelhos</button><button class="btn" data-a="admRed" data-id="${f.id}">Redefinir senha</button></div></li>`;
+  <div class="dados"><div><span>Assinatura:</span> ${textoAssin(f.assinatura)}</div><div><span>Termo de uso:</span> ${f.aceite ? `aceito em ${new Date(f.aceite.em).toLocaleDateString("pt-BR")} (versão ${esc(f.aceite.versao)})` : "ainda não aceito"}</div><div><span>Pacientes ativos:</span> ${f.pacientes}</div><div><span>Com acesso ao portal:</span> ${f.pacientesComAcesso}</div><div><span>Último acesso:</span> ${quandoAdm(f.ultimo)}</div><div><span>Aparelhos conectados:</span> ${f.sessoes}</div></div>
+  <div class="acoes-item"><button class="btn" data-a="admEdit" data-id="${f.id}">Editar</button><button class="btn ${f.status === "bloqueado" ? "prim" : "per"}" data-a="admBloq" data-id="${f.id}">${f.status === "bloqueado" ? "Desbloquear" : "Bloquear"}</button><button class="btn" data-a="admEnc" data-id="${f.id}" ${f.sessoes ? "" : "disabled"}>Desconectar aparelhos</button><button class="btn" data-a="admRed" data-id="${f.id}">Redefinir senha</button><button class="btn" data-a="admAssin" data-id="${f.id}">Assinatura</button><button class="btn prim" data-a="admPag" data-id="${f.id}">Registrar pagamento</button></div></li>`;
 }
 function rAdm() {
   const l = admSt && admSt.fisios;
@@ -1021,7 +1064,7 @@ function rAdm() {
   <div class="bloco"><div class="topo-lista"><h2>Fisioterapeutas${l ? ` (${l.length})` : ""}</h2><button class="btn prim" data-a="admNovo">Cadastrar fisioterapeuta</button></div>
   ${!l ? '<p class="vazio">Carregando...</p>' : l.length ? `<ul class="lista adm-lista">${l.map(cartaoFisio).join("")}</ul>` : '<p class="vazio">Nenhum fisioterapeuta ainda. Cadastre o primeiro: ele recebe um e-mail para criar a senha.</p>'}</div>
   ${formSenha()}
-  <div class="bloco"><div class="topo-lista"><h2>Histórico de acessos</h2><button class="link" data-a="admRecarrega">Atualizar</button></div>${admLog && admLog.length ? `<ul class="lista">${admLog.map((x) => `<li><b>${esc(x.quem)}</b>: ${esc(x.acao)}<small>${new Date(x.em).toLocaleString("pt-BR")}</small></li>`).join("")}</ul>` : `<p class="vazio">${admLog ? "Nenhum registro ainda." : "Carregando..."}</p>`}</div></main>`;
+  <div class="bloco"><div class="topo-lista"><h2>Histórico de acessos</h2><button class="link" data-a="admRecarrega">Atualizar</button></div><p class="dica">Pacientes aparecem sem nome. Cada registro é encadeado ao anterior: a verificação mostra se algum foi alterado ou apagado.</p><div class="acoes-item"><button class="btn" data-a="admVerif">Verificar integridade</button><button class="btn" data-a="admExport">Exportar planilha</button></div><div id="admVerifRes"></div>${admLog && admLog.length ? `<ul class="lista">${admLog.map((x) => `<li><b>${esc(x.quem)}</b>: ${esc(x.acao)}<small>${new Date(x.em).toLocaleString("pt-BR")}</small></li>`).join("")}</ul>` : `<p class="vazio">${admLog ? "Nenhum registro ainda." : "Carregando..."}</p>`}</div></main>`;
 }
 function formFisio(f) {
   abrir(f ? "Editar fisioterapeuta" : "Cadastrar fisioterapeuta", `<form novalidate class="bloco" data-adm="${f ? f.id : ""}"><label for="aN">Nome completo <span class="ob">*</span></label><input id="aN" name="nome" value="${esc(f ? f.nome : "")}" autocomplete="off" required><label for="aE">E-mail <span class="ob">*</span></label><input id="aE" name="email" type="email" autocapitalize="off" spellcheck="false" value="${esc(f ? f.email : "")}" required>
@@ -1043,7 +1086,13 @@ document.addEventListener("submit", async (e) => {
 }, true);
 
 /* ===== Login: e-mail, depois senha (ou código no primeiro acesso) ===== */
-let lgEmail = ""; try { lgEmail = localStorage.getItem("fisioagenda-v1:email") || ""; } catch (e) {}
+let lgEmail = "", lgTermo = false, lgSenha = ""; try { lgEmail = localStorage.getItem("fisioagenda-v1:email") || ""; } catch (e) {}
+/* Identificador deste aparelho, para a verificação em duas etapas. Não identifica a pessoa. */
+function aparelhoId() {
+  let a = ""; try { a = localStorage.getItem("fisioagenda-v1:aparelho") || ""; } catch (e) {}
+  if (!/^[a-f0-9]{32}$/.test(a)) { a = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join(""); try { localStorage.setItem("fisioagenda-v1:aparelho", a); } catch (e) {} }
+  return a;
+}
 const lgErroHtml = (m) => `<div class="erro" id="lgErro" ${m ? "" : "hidden"}>${esc(m || "")}</div>`;
 function lgErro(m) { const e = $("lgErro"); e.textContent = m; e.hidden = !m; }
 function pinCampo(id, t, ac) { return `<label for="${id}">${t}</label><input id="${id}" name="${id}" type="password" inputmode="numeric" maxlength="6" autocomplete="${ac}" placeholder="6 números" required>`; }
@@ -1067,7 +1116,9 @@ const REGRA_SENHA = "Pelo menos 8 caracteres, com letras e números.";
 function senhaCampo(id, t, ac) { return `<label for="${id}">${t}</label><div class="senha-l"><input id="${id}" name="${id}" type="password" autocomplete="${ac}" required><button type="button" class="link" data-ver="${id}">Mostrar</button></div>`; }
 function senhaFraca(s) { return s.length < 8 ? "A senha precisa ter pelo menos 8 caracteres." : !/[A-Za-z]/.test(s) || !/\d/.test(s) ? "Use letras e números na senha." : ""; }
 function passoSenha() { $("loginCartao").innerHTML = `<form data-l="senha" novalidate><h2>Digite sua senha</h2><div class="lg-em">${esc(lgEmail)}</div>${senhaCampo("lP", "Senha", "current-password")}${lgErroHtml()}<button class="salvar">Entrar</button><div class="lg-links"><button type="button" class="link" data-l2="email">‹ Outro e-mail</button><button type="button" class="link" data-l2="esqueci">Esqueci minha senha</button></div></form>`; $("lP").focus(); }
-function passoCodigo(primeiro) { $("loginCartao").innerHTML = `<form data-l="criar" novalidate><h2>${primeiro ? "Criar sua senha" : "Nova senha"}</h2><div class="lg-em">${esc(lgEmail)}</div><div class="dica">Enviamos um código de 6 números para o seu e-mail.</div><label for="lC">Código recebido</label><input id="lC" name="c" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required>${senhaCampo("lN", "Nova senha", "new-password")}${senhaCampo("lN2", "Repita a senha", "new-password")}<div class="dica">${REGRA_SENHA}</div>${lgErroHtml()}<button class="salvar">Salvar senha e entrar</button><div class="lg-links"><button type="button" class="link" data-l2="email">‹ Outro e-mail</button><button type="button" class="link" data-l2="reenviar">Enviar novo código</button></div></form>`; }
+function passoCodigo(primeiro) { $("loginCartao").innerHTML = `<form data-l="criar" novalidate><h2>${primeiro ? "Criar sua senha" : "Nova senha"}</h2><div class="lg-em">${esc(lgEmail)}</div><div class="dica">Enviamos um código de 6 números para o seu e-mail.</div><label for="lC">Código recebido</label><input id="lC" name="c" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required>${senhaCampo("lN", "Nova senha", "new-password")}${senhaCampo("lN2", "Repita a senha", "new-password")}<div class="dica">${REGRA_SENHA}</div>${lgTermo ? '<label class="lg-termo"><input type="checkbox" name="aceite" value="1"> Li e aceito o <a href="termos.html" target="_blank" rel="noopener">termo de uso</a> e o <a href="privacidade.html" target="_blank" rel="noopener">aviso de privacidade</a></label>' : ""}${lgErroHtml()}<button class="salvar">Salvar senha e entrar</button><div class="lg-links"><button type="button" class="link" data-l2="email">‹ Outro e-mail</button><button type="button" class="link" data-l2="reenviar">Enviar novo código</button></div></form>`; }
+function passoVerificar() { $("loginCartao").innerHTML = `<form data-l="verif" novalidate><h2>Confirme este aparelho</h2><div class="lg-em">${esc(lgEmail)}</div><div class="dica">É a primeira vez que você entra por aqui. Enviamos um código de 6 números para o seu e-mail. Depois de confirmar, este aparelho fica liberado por 30 dias.</div><label for="lV">Código recebido</label><input id="lV" name="c" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required>${lgErroHtml()}<button class="salvar">Confirmar e entrar</button><div class="lg-links"><button type="button" class="link" data-l2="email">‹ Outro e-mail</button><button type="button" class="link" data-l2="reverif">Enviar novo código</button></div></form>`; $("lV").focus(); }
+function entrou(j) { if (j.verificar) return passoVerificar(); lgSenha = ""; concluirLogin(j); }
 function entrouPac(j) { sessao = { token: j.token, perfil: "paciente" }; try { localStorage.setItem(CH_SESSAO, JSON.stringify(sessao)); localStorage.removeItem(CHAVE); localStorage.removeItem(CH_SYNC); } catch (e) {} $("login").hidden = true; abrirPortal(); }
 function concluirLogin(j) {
   sessao = { token: j.token, nome: j.nome, email: j.email, papel: j.papel };
@@ -1088,20 +1139,21 @@ document.addEventListener("submit", (e) => {
   const f = e.target.closest("[data-l]"); if (!f) return; e.preventDefault();
   const v = Object.fromEntries(new FormData(f));
   comBotao(f, async () => {
-    if (f.dataset.l === "email") { if (!v.e.trim()) return lgErro("Informe seu e-mail."); lgEmail = v.e.trim(); const r = await api("estado", { email: lgEmail }); if (r.temSenha) passoSenha(); else { await api("enviarCodigo", { email: lgEmail }); passoCodigo(true); } }
+    if (f.dataset.l === "email") { if (!v.e.trim()) return lgErro("Informe seu e-mail."); lgEmail = v.e.trim(); const r = await api("estado", { email: lgEmail }); lgTermo = !!r.termo; if (r.temSenha) passoSenha(); else { await api("enviarCodigo", { email: lgEmail }); passoCodigo(true); } }
     if (f.dataset.l === "pac") { if (!/^\d{6}$/.test(v.lQ)) return lgErro("O PIN tem 6 números."); entrouPac(await api("entrarPac", { telefone: v.t, pin: v.lQ })); }
     if (f.dataset.l === "pacEsq") { if (!v.t.trim()) return lgErro("Informe seu celular."); await api("pacEsqueci", { telefone: v.t }); pacNovoTela(v.t); }
     if (f.dataset.l === "pacNovo") { if (!/^\d{6}$/.test(v.lRn)) return lgErro("O PIN precisa ter 6 números."); if (v.lRn !== v.lRn2) return lgErro("Os PINs não são iguais."); entrouPac(await api("pacNovoPin", { telefone: f.dataset.t, codigo: v.c, pin: v.lRn })); }
     if (f.dataset.l === "ativar") { if (!/^\d{6}$/.test(v.lA)) return lgErro("O PIN precisa ter 6 números."); if (v.lA !== v.lA2) return lgErro("Os PINs não são iguais."); entrouPac(await api("ativar", { convite: f.dataset.c, pin: v.lA })); }
-    if (f.dataset.l === "senha") { if (!v.lP) return lgErro("Digite sua senha."); concluirLogin(await api("entrar", { email: lgEmail, senha: v.lP })); }
-    if (f.dataset.l === "criar") { const fr = senhaFraca(v.lN); if (fr) return lgErro(fr); if (v.lN !== v.lN2) return lgErro("As senhas não são iguais."); concluirLogin(await api("criarSenha", { email: lgEmail, codigo: v.c, senha: v.lN })); }
+    if (f.dataset.l === "senha") { if (!v.lP) return lgErro("Digite sua senha."); lgSenha = v.lP; entrou(await api("entrar", { email: lgEmail, senha: v.lP, aparelho: aparelhoId() })); }
+    if (f.dataset.l === "verif") { if (!/^\d{6}$/.test(v.c)) return lgErro("O código tem 6 números."); lgSenha = ""; concluirLogin(await api("confirmarAparelho", { email: lgEmail, codigo: v.c, aparelho: aparelhoId() })); }
+    if (f.dataset.l === "criar") { const fr = senhaFraca(v.lN); if (fr) return lgErro(fr); if (v.lN !== v.lN2) return lgErro("As senhas não são iguais."); if (lgTermo && !v.aceite) return lgErro("Para continuar, leia e aceite o termo de uso."); concluirLogin(await api("criarSenha", { email: lgEmail, codigo: v.c, senha: v.lN, aparelho: aparelhoId(), aceite: !!v.aceite })); }
   });
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("inst") && !$("inst").hidden) fecharInstalar(); });
 document.addEventListener("click", (e) => { const b = e.target.closest("[data-ver]"); if (!b) return; const i = $(b.dataset.ver); const ver = i.type === "password"; i.type = ver ? "text" : "password"; b.textContent = ver ? "Ocultar" : "Mostrar"; });
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-l2]"); if (!b) return;
-  try { const k = b.dataset.l2; if (k === "voltar") mostrarLogin(); else if (k === "pac") loginPac(); else if (k === "pacEsq") pacEsqTela(); else if (k === "fisio" || k === "email") loginEmail(); else { await api("enviarCodigo", { email: lgEmail }); if (b.dataset.l2 === "esqueci") passoCodigo(false); else lgErro("Novo código enviado."); } } catch (x) { lgErro(x.message); }
+  try { const k = b.dataset.l2; if (k === "voltar") mostrarLogin(); else if (k === "pac") loginPac(); else if (k === "pacEsq") pacEsqTela(); else if (k === "fisio" || k === "email") loginEmail(); else if (k === "reverif") { if (!lgSenha) return loginEmail("Entre de novo com a senha."); const j = await api("entrar", { email: lgEmail, senha: lgSenha, aparelho: aparelhoId() }); if (j.verificar) lgErro("Pedido enviado. Confira seu e-mail. Um código novo só sai 1 minuto depois do anterior."); else entrou(j); } else { await api("enviarCodigo", { email: lgEmail }); if (b.dataset.l2 === "esqueci") passoCodigo(false); else lgErro("Novo código enviado."); } } catch (x) { lgErro(x.message); }
 });
 function iniciar() {
   if (typeof semearDemo === "function") semearDemo();
@@ -1404,6 +1456,12 @@ const A = {
   admBloq(el) { const f = admFisio(el.dataset.id), on = f.status !== "bloqueado"; pedirConf(on ? `Bloquear o acesso de ${f.nome}? Os aparelhos dele serão desconectados. Os pacientes dele continuam usando o portal.` : `Desbloquear o acesso de ${f.nome}?`, on ? "Bloquear acesso" : "Desbloquear acesso", () => admAcao("admBloquear", { id: f.id, bloquear: on }, on ? "Acesso bloqueado" : "Acesso desbloqueado")); },
   admEnc(el) { const f = admFisio(el.dataset.id); pedirConf(`Desconectar todos os aparelhos de ${f.nome}? Ele precisará entrar de novo com a senha.`, "Desconectar aparelhos", () => admAcao("admEncerrar", { id: f.id }, "Aparelhos desconectados")); },
   admRed(el) { const f = admFisio(el.dataset.id); pedirConf(`Redefinir a senha de ${f.nome}? A senha atual deixa de valer e ele recebe um e-mail para criar outra.`, "Redefinir senha", () => admAcao("admRedefinir", { id: f.id }, "Senha redefinida")); },
+  async verifHist(el) { el.disabled = true; try { const r = await api("verificarHistorico", { token: sessao.token }); $("verifRes").innerHTML = resultadoVerif(r.integro, r.motivo, r.total); } catch (e) { toast(e.message); } el.disabled = false; },
+  async exportHist(el) { el.disabled = true; try { const j = await api("auditoria", { token: sessao.token, completo: true }); baixarCsv(`historico-fisioagenda-${hoje()}.csv`, [["Data e hora", "Quem", "Ação", "Paciente"], ...j.itens.map((x) => [dataHora(x.em), nomeQuem(x.quem), x.acao, nomeAlvo(x.alvo)])]); toast("Planilha baixada"); } catch (e) { toast(e.message); } el.disabled = false; },
+  async admVerif(el) { el.disabled = true; try { const r = await api("admVerificar", { token: sessao.token }); $("admVerifRes").innerHTML = r.itens.map((x) => x.ok ? `<div class="conflito ok">${esc(x.nome)}: íntegro (${x.total} registros)</div>` : `<div class="conflito e">${esc(x.nome)}: ${esc(x.motivo)}</div>`).join(""); } catch (e) { if (!admSessaoCaiu(e)) toast(e.message); } el.disabled = false; },
+  async admExport(el) { el.disabled = true; try { const j = await api("admAuditoria", { token: sessao.token, completo: true }); baixarCsv(`historico-administracao-${hoje()}.csv`, [["Data e hora", "Quem", "Ação"], ...j.itens.map((x) => [dataHora(x.em), x.quem, x.acao])]); toast("Planilha baixada"); } catch (e) { if (!admSessaoCaiu(e)) toast(e.message); } el.disabled = false; },
+  admAssin(el) { formAssinatura(admFisio(el.dataset.id)); },
+  admPag(el) { formPagamento(admFisio(el.dataset.id)); },
   admRecarrega() { admCarregar(); },
   async admSair() { try { await api("admSair", { token: sessao.token }); } catch (e) {} try { localStorage.removeItem(CH_SESSAO); } catch (e) {} location.reload(); },
   confOk() { const f = confFn; confFn = null; if (f) f(); },
