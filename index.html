@@ -166,6 +166,22 @@ details.mais{margin-top:16px;border-top:1px solid var(--borda);padding-top:8px}d
 .tab-rol{overflow-x:auto}table.rel{width:100%;border-collapse:collapse;font-size:14px}table.rel th,table.rel td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--borda);vertical-align:top}table.rel th{color:var(--mut);font-weight:600;font-size:12.5px}table.rel td.num{font-variant-numeric:tabular-nums;text-align:right;font-family:var(--disp);font-weight:600}table.rel th:nth-child(2),table.rel th:nth-child(3),table.rel th:nth-child(4){text-align:right}
 .conta{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.conta .btn .i{width:18px;height:18px}
 .abas .sair-nav{margin-top:12px}
+/* Instalar: folha que sobe da base */
+#inst{position:fixed;inset:0;z-index:90}
+.inst-fundo{position:absolute;inset:0;background:rgba(12,31,27,.45)}
+.inst-folha{position:absolute;left:0;right:0;bottom:0;max-height:92dvh;overflow-y:auto;background:var(--card);border-radius:24px 24px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 50px -20px rgba(0,0,0,.35);animation:sobe .28s ease-out}
+@keyframes sobe{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.inst-alca{width:40px;height:5px;border-radius:9px;background:var(--borda);margin:0 auto 14px}
+.inst-cab{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}.inst-cab .logo{width:52px;height:52px}.inst-cab h2{font-size:21px;margin:2px 0 4px}.inst-cab p{margin:0;color:var(--mut);font-size:14.5px}
+.inst-modo{margin:6px 0 4px;grid-template-columns:repeat(3,1fr)}
+.inst-passos{list-style:none;counter-reset:p;padding:0;margin:14px 0 0}.inst-passos li{counter-increment:p;position:relative;padding:12px 0 12px 46px;border-bottom:1px solid var(--borda);font-size:16px;line-height:1.45}.inst-passos li:last-child{border-bottom:0}
+.inst-passos li::before{content:counter(p);position:absolute;left:0;top:10px;width:32px;height:32px;border-radius:50%;background:var(--cor-c);color:var(--cor-e);font:700 15px/32px var(--disp);text-align:center}
+.ic-in{width:20px;height:20px;vertical-align:-4px;margin:0 2px;color:var(--az)}
+#instJa{margin-bottom:4px}
+.guia details{padding:0}.guia summary{list-style:none;cursor:pointer;padding:16px;font:700 16px var(--disp);display:flex;justify-content:space-between;align-items:center}.guia summary::-webkit-details-marker{display:none}
+.guia summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--fraco);border-bottom:2px solid var(--fraco);transform:rotate(45deg);margin:-4px 4px 0 12px;transition:transform .15s}.guia details[open] summary::after{transform:rotate(-135deg);margin-top:4px}
+.guia-c{padding:0 16px 14px;font-size:14.5px;color:var(--ink)}.guia-c p{margin:0 0 10px}.guia-c ol{margin:0 0 10px;padding-left:20px}.guia-c li{margin:4px 0}
+@media(min-width:900px){.inst-folha{left:50%;right:auto;bottom:50%;width:min(520px,92vw);transform:translate(-50%,50%);border-radius:24px;animation:none}.inst-alca{display:none}}
 #adm main{display:block;max-width:720px;padding-bottom:40px}
 
 /* Computador: barra lateral */
@@ -185,6 +201,13 @@ details.mais{margin-top:16px;border-top:1px solid var(--borda);padding-top:8px}d
 @media(max-width:400px){.resumo{grid-template-columns:1fr 1fr}.reg,.reg.add{grid-template-columns:1fr 1fr}.reg b,.reg.add select{grid-column:1/-1}.ln3{grid-template-columns:1fr 1fr}.ln3>:first-child{grid-column:1/-1}.atalhos button{font-size:13.5px;gap:8px}}
 @media(max-width:560px){.reg,.reg.add{grid-template-columns:1fr 1fr}.reg b,.reg.add select{grid-column:1/-1}.resumo{grid-template-columns:1fr 1fr}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Administração: lista de fisioterapeutas */
+.adm-lista{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:12px}
+.adm-lista .adm-fisio{display:block;border:1px solid var(--borda);border-radius:var(--r);padding:14px 16px;background:var(--suave)}
+.adm-lista .adm-fisio .topo-lista{align-items:flex-start;gap:12px}
+.adm-lista .adm-fisio .dados{margin:10px 0 4px}
+.adm-lista .adm-fisio .acoes-item{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -396,7 +419,7 @@ const { addDays, parseHHmm, weekdayOf, zonedToUtc, utcToLocalDate, overlaps, fit
 /* ===== Dados: tudo fica neste aparelho (localStorage), no padrão do agenda-v1 ===== */
 /* Cole aqui o endereço do App da Web (termina em /exec). Vazio = só neste aparelho. */
 const URL_API = String(window.FISIOAGENDA_URL || "").trim();
-const VERSAO = "1.0";
+const VERSAO = "1.1.0";
 const DEMO = false;
 const TZ = "America/Sao_Paulo", CHAVE = "fisioagenda-v1:dados", CHAVE_BACKUP = "fisioagenda-v1:ultimoBackup", CH_SESSAO = "fisioagenda-v1:sessao", CH_SYNC = "fisioagenda-v1:sync", CH_DICAS = "fisioagenda-v1:dicas";
 const novo = () => ({ versao: 1, perfil: { nome: "" }, excluidos: {}, recomendacoes: [], documentos: [], pacientes: [], consultas: [], series: [], anotacoes: [], bloqueios: [], excecoes: [],
@@ -531,6 +554,7 @@ function pintarTopo() {
 }
 function atualizarTudo() {
   if (dlg.open) { renderDepois = true; }
+  talvezInstalar();
   document.querySelectorAll("#abas button").forEach((b) => { const on = b.dataset.k === aba || (b.dataset.k === "inicio" && ["solicitacoes", "materiais", "relatorio"].includes(aba) && innerWidth < 900); b.classList.toggle("ativa", on); on ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"); });
   const av = erroGravar ? '<div class="aviso e" role="alert">Não foi possível salvar neste aparelho. Exporte um backup e libere espaço no navegador.</div>' : "";
   $("tela").innerHTML = av + ({ inicio: rInicio, agenda: rAgenda, pacientes: pacAberto ? rPaciente : rPacientes, ajustes: rAjustes, solicitacoes: rSolic, materiais: rMateriais, relatorio: rRelatorio }[aba])();
@@ -759,14 +783,14 @@ function rAjustes() {
   <div class="bloco"><div class="topo-lista"><h2>Bloqueios e férias</h2><button class="btn" data-a="novoB">+ Novo</button></div>${dados.bloqueios.length ? `<ul class="lista">${dados.bloqueios.slice().sort((a, b) => a.ini.localeCompare(b.ini)).map((b) => `<li class="pac" style="cursor:default"><div><b>${dCurta(b.ini)}${b.iniH ? " " + b.iniH : ""} a ${dCurta(b.fim)}${b.fimH ? " " + b.fimH : ""}</b><small>${esc(b.motivo)}</small></div><button class="link" data-a="tiraB" data-id="${b.id}">Remover</button></li>`).join("")}</ul>` : '<p class="vazio">Nenhum bloqueio.</p>'}</div>
   <div class="bloco"><h2>Horários excepcionais</h2><p class="dica">Vale só na data escolhida e substitui o horário normal. Sem horários, o dia fica sem atendimento.</p>${dados.excecoes.length ? `<ul class="lista">${dados.excecoes.slice().sort((a, b) => a.data.localeCompare(b.data)).map((e) => `<li class="pac" style="cursor:default"><div><b>${dCurta(e.data)}</b><small>${e.ini ? `${e.ini} às ${e.fim}` : "Sem atendimento"}</small></div><button class="link" data-a="tiraE" data-id="${e.id}">Remover</button></li>`).join("")}</ul>` : ""}
    <form data-f="addExc" class="reg add" style="margin-top:12px"><input type="date" name="d" required aria-label="Data"><input type="time" name="s" aria-label="Início"><input type="time" name="e" aria-label="Fim"><button class="btn">Adicionar</button></form></div>
-  ${URL_API ? formSenha() : ""}${URL_API ? '<div class="bloco"><h2>Histórico de acessos</h2><p class="dica">Mostra quem entrou, abriu documentos, pediu consultas e trocou PIN.</p><div class="acoes-item"><button class="btn" data-a="verAuditoria">Ver histórico</button></div></div>' : ""}<div class="bloco" id="blocoBackup"><h2>${URL_API ? "Dados e backup" : "Backup dos dados"}</h2><p class="dica">${URL_API ? `Seus dados ficam guardados no seu Google Drive, com uma cópia por dia. ${esc(textoSync())}` : "Os dados ficam guardados só neste navegador. Limpar o navegador apaga tudo."} O arquivo exportado contém dados de saúde: guarde em local seguro. ${u ? `Último backup: ${new Date(u).toLocaleString("pt-BR")}.` : ""}</p>${DEMO ? '<p class="dica">O backup fica desativado nesta demonstração.</p>' : '<div class="acoes-item"><button class="btn prim" data-a="backup">Salvar arquivo de backup</button><button class="btn" data-a="importar">Importar backup</button></div>'}</div>`;
+  ${URL_API ? formSenha() : ""}${URL_API ? '<div class="bloco"><h2>Histórico de acessos</h2><p class="dica">Mostra quem entrou, abriu documentos, pediu consultas e trocou PIN.</p><div class="acoes-item"><button class="btn" data-a="verAuditoria">Ver histórico</button></div></div>' : ""}<div class="bloco" id="blocoBackup"><h2>${URL_API ? "Dados e backup" : "Backup dos dados"}</h2><p class="dica">${URL_API ? `Seus dados ficam guardados no seu Google Drive, com uma cópia por dia. ${esc(textoSync())}` : "Os dados ficam guardados só neste navegador. Limpar o navegador apaga tudo."} O arquivo exportado contém dados de saúde: guarde em local seguro. ${u ? `Último backup: ${new Date(u).toLocaleString("pt-BR")}.` : ""}</p>${DEMO ? '<p class="dica">O backup fica desativado nesta demonstração.</p>' : '<div class="acoes-item"><button class="btn prim" data-a="backup">Salvar arquivo de backup</button><button class="btn" data-a="importar">Importar backup</button></div>'}</div><p class="dica" style="text-align:center">FisioAgenda ${VERSAO}</p>`;
 }
 
 /* ===== Menu, busca e instalar ===== */
 function abrirMenu() {
   const n = nomeProf() || "FisioAgenda", ini = n.split(" ").filter(Boolean).slice(0, 2).map((x) => x[0]).join("").toUpperCase();
   const it = [["novaC", "Nova consulta"], ["novaS", "Série recorrente"], ["novoP", "Novo paciente"], ["novoB", "Bloquear horário"], ["registrar", "Registrar atendimento já feito"]];
-  $("menuLat").innerHTML = `<div class="ml-topo">${dados.perfil.foto ? fotoProf(42) : `<div class="av">${esc(ini)}</div>`}<div><b>${esc(n)}</b><small>${esc(textoSync() || "Fisioterapeuta")}</small></div></div><div class="ml-itens">${it.map(([m, t]) => `<button data-a="mAcao" data-m="${m}">${t}</button>`).join("")}<hr><button data-a="aba" data-k="solicitacoes">Solicitações</button><button data-a="aba" data-k="materiais">Recomendações e materiais</button><button data-a="aba" data-k="relatorio">Relatório do mês</button><button data-a="aba" data-k="ajustes">Ajustes e backup</button>${URL_API ? '<button data-a="syncAgora">Sincronizar agora</button>' : ""}${DEMO ? "" : '<button data-a="mAcao" data-m="instalar">Instalar o app no celular</button>'}${URL_API ? '<hr><button class="sair-m" data-a="sairConta">Sair ou trocar de usuário</button>' : ""}</div><div class="ml-rod">FisioAgenda ${VERSAO}${DEMO ? "" : ' · <a href="privacidade.html" target="_blank" rel="noopener">Aviso de privacidade</a>'}</div>`;
+  $("menuLat").innerHTML = `<div class="ml-topo">${dados.perfil.foto ? fotoProf(42) : `<div class="av">${esc(ini)}</div>`}<div><b>${esc(n)}</b><small>${esc(textoSync() || "Fisioterapeuta")}</small></div></div><div class="ml-itens">${it.map(([m, t]) => `<button data-a="mAcao" data-m="${m}">${t}</button>`).join("")}<hr><button data-a="aba" data-k="solicitacoes">Solicitações</button><button data-a="aba" data-k="materiais">Recomendações e materiais</button><button data-a="aba" data-k="relatorio">Relatório do mês</button><button data-a="aba" data-k="ajustes">Ajustes e backup</button>${URL_API ? '<button data-a="syncAgora">Sincronizar agora</button>' : ""}<button data-a="mAcao" data-m="comoUsar">Como usar</button>${DEMO || instalado() ? "" : '<button data-a="mAcao" data-m="instalar">Instalar o app</button>'}${URL_API ? '<hr><button class="sair-m" data-a="sairConta">Sair ou trocar de usuário</button>' : ""}</div><div class="ml-rod">FisioAgenda ${VERSAO}${DEMO ? "" : ' · <a href="privacidade.html" target="_blank" rel="noopener">Aviso de privacidade</a>'}</div>`;
   $("menuLat").hidden = $("fundo").hidden = false;
 }
 function fecharMenu() { $("menuLat").hidden = $("fundo").hidden = true; }
@@ -776,7 +800,54 @@ function rBusca(v) {
   const l = dados.pacientes.filter((p) => p.nome.toLowerCase().includes(t) || (dig && p.telefone.replace(/\D/g, "").includes(dig))).slice(0, 30);
   $("resG").innerHTML = l.length ? `<ul class="lista">${l.map((p) => itemP(p).replace('data-a="verP"', 'data-a="abrirP"')).join("")}</ul>` : '<p class="vazio">Nenhum paciente encontrado.</p>';
 }
-function abrirInstalar() { abrir("Instalar no celular", '<div class="bloco"><h2>iPhone</h2><p class="dica">No Safari, toque em Compartilhar e depois em "Adicionar à Tela de Início".</p><h2 style="margin-top:16px">Android</h2><p class="dica">No Chrome, abra o menu de três pontos e toque em "Instalar app" ou "Adicionar à tela inicial".</p></div>'); }
+/* ===== Instalar o app: tela suspensa com o passo a passo do aparelho ===== */
+let pedidoInstalar = null, instAuto = false;
+addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); pedidoInstalar = e; });
+addEventListener("appinstalled", () => { pedidoInstalar = null; fecharInstalar(); toast("App instalado"); });
+const instalado = () => { try { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; } catch (e) { return false; } };
+function plataforma() { const u = navigator.userAgent; if (/iPhone|iPad|iPod/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1)) return "ios"; if (/Android/.test(u)) return "android"; return "pc"; }
+const ICO_COMP = '<svg class="ic-in" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3.5M8 7.5l4-4 4 4"/><path d="M8 11H6.5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H16"/></svg>';
+const ICO_3P = '<svg class="ic-in" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+const PASSOS = {
+  ios: ["Abra este endereço no <b>Safari</b>.", `Toque no botão <b>Compartilhar</b> ${ICO_COMP}, na barra de baixo ou no topo.`, "Role a lista e toque em <b>Adicionar à Tela de Início</b>.", "Toque em <b>Adicionar</b>. O ícone do FisioAgenda aparece na tela do celular."],
+  android: ["Abra este endereço no <b>Chrome</b>.", `Toque nos três pontos ${ICO_3P}, no canto de cima.`, "Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.", "Confirme em <b>Instalar</b>. O ícone do FisioAgenda aparece na tela do celular."],
+  pc: ["Abra este endereço no <b>Chrome</b> ou no <b>Edge</b>.", `Clique no ícone de instalar, no fim da barra de endereço, ou no menu ${ICO_3P}.`, "Escolha <b>Instalar FisioAgenda</b> e confirme.", "O app abre em uma janela própria e ganha um atalho no computador."],
+};
+let instPlat = plataforma();
+function abrirInstalar(auto) {
+  let el = $("inst"); if (!el) { el = document.createElement("div"); el.id = "inst"; document.body.append(el); }
+  const pac = !$("pv").hidden;
+  const abas = [["ios", "iPhone"], ["android", "Android"], ["pc", "Computador"]].map(([k, t]) => `<button data-a="instPlat" data-k="${k}" aria-pressed="${k === instPlat}">${t}</button>`).join("");
+  el.innerHTML = `<div class="inst-fundo" data-a="instFechar"></div><section class="inst-folha" role="dialog" aria-modal="true" aria-labelledby="instT"><div class="inst-alca" aria-hidden="true"></div>
+  <div class="inst-cab">${LOGO}<div><h2 id="instT">Instale o FisioAgenda</h2><p>${pac ? "Assim você encontra sua agenda e suas orientações com um toque, como qualquer aplicativo." : "Ganha um ícone na tela inicial, abre mais rápido e funciona como um aplicativo."}</p></div></div>
+  ${pedidoInstalar && instPlat !== "ios" ? `<button class="salvar" id="instJa" data-a="instAgora">Instalar agora</button><p class="dica" style="text-align:center">Ou siga os passos abaixo.</p>` : ""}
+  <div class="modo inst-modo" role="group" aria-label="Aparelho">${abas}</div>
+  <ol class="inst-passos">${PASSOS[instPlat].map((t) => `<li>${t}</li>`).join("")}</ol>
+  <div class="acoes-form"><button class="btn" style="flex:1" data-a="instFechar">${auto ? "Agora não" : "Fechar"}</button></div></section>`;
+  el.hidden = false; document.body.style.overflow = "hidden";
+}
+function fecharInstalar() { const el = $("inst"); if (el) el.hidden = true; if (!dlg.open) document.body.style.overflow = ""; try { localStorage.setItem("fisioagenda-v1:instalarVisto", "1"); } catch (e) {} }
+/* Aparece sozinha uma vez, só no celular e se o app ainda não estiver instalado. */
+function talvezInstalar() {
+  if (instAuto || DEMO || instalado() || navigator.webdriver || plataforma() === "pc") return;
+  try { if (localStorage.getItem("fisioagenda-v1:instalarVisto")) return; } catch (e) { return; }
+  instAuto = true; setTimeout(() => { if (!dlg.open && $("login").hidden) abrirInstalar(true); }, 1500);
+}
+
+/* ===== Como usar (fisioterapeuta) ===== */
+const GUIA = [
+  ["Comece por aqui", "<ol><li>Em <b>Ajustes</b>, preencha seu nome e seus <b>horários de atendimento</b>, a duração padrão e o intervalo entre visitas.</li><li>Cadastre seus pacientes em <b>Pacientes</b>, botão <b>+ Novo</b>. Digite o CEP para preencher o endereço.</li><li>Marque as consultas ou crie <b>séries recorrentes</b> para quem atende toda semana.</li></ol>"],
+  ["Marcar consultas", "<p><b>Nova consulta</b> marca um horário avulso. Se o horário estiver ocupado ou bloqueado, o app não deixa salvar; fora do expediente, ele pede confirmação.</p><p><b>Série recorrente</b> cria consultas toda semana, a cada 2 semanas ou a cada X dias. As datas que não couberem aparecem com o motivo.</p><p>Para mudar uma consulta da série, abra a consulta e escolha se a mudança vale só para ela, para ela e as próximas ou para toda a série.</p>"],
+  ["Dia a dia", "<p>O <b>Início</b> mostra os atendimentos de hoje, os lembretes de amanhã e os pacientes que precisam de atenção.</p><p>No fim do dia, toque em <b>Fechar o dia</b> para marcar cada visita como realizada ou não, e anotar a evolução com as frases prontas.</p><p>Esqueceu de marcar uma visita? Use <b>Registrar atendimento já feito</b>.</p>"],
+  ["Lembretes", "<p>Em <b>Lembretes de amanhã</b>, toque em <b>Lembrar</b> para abrir o WhatsApp com a mensagem pronta. Se o paciente tiver e-mail cadastrado, ele também recebe um lembrete automático na véspera.</p>"],
+  ["Portal do paciente", "<ol><li>Abra o paciente e toque em <b>Gerar convite</b>.</li><li>Envie o link pelo WhatsApp. Ele vale por 7 dias e uma vez só.</li><li>O paciente cria um PIN e passa a ver a agenda, pedir horários, ler orientações e baixar documentos.</li></ol><p>Pedidos de horário chegam em <b>Solicitações</b> e por e-mail. Aprove ou recuse; sem resposta, o pedido expira e o horário volta a ficar livre.</p>"],
+  ["Orientações e documentos", "<p>Na ficha do paciente, ou em <b>Recomendações e materiais</b>, crie orientações e envie documentos em PDF, JPG ou PNG. O paciente só vê o que estiver <b>publicado</b>.</p><p>As <b>anotações internas</b> nunca aparecem para o paciente.</p>"],
+  ["Relatório e histórico", "<p><b>Relatório do mês</b> mostra atendimentos, faltas e cancelamentos por paciente, com download em planilha.</p><p>Em <b>Ajustes</b>, o <b>histórico de acessos</b> mostra quem entrou, pediu consultas ou baixou documentos.</p>"],
+  ["Segurança", "<p>Seus dados ficam no seu Google Drive, com uma cópia por dia. Não compartilhe a pasta FisioAgenda.</p><p>Use <b>Sair ou trocar de usuário</b> em aparelhos que outras pessoas usam. Esqueceu a senha? Na entrada, toque em <b>Esqueci minha senha</b>.</p>"],
+];
+function abrirComoUsar() {
+  abrir("Como usar", `<div class="guia">${GUIA.map(([t, h], k) => `<details class="bloco" ${k === 0 ? "open" : ""}><summary>${t}</summary><div class="guia-c">${h}</div></details>`).join("")}${instalado() || DEMO ? "" : '<button class="btn" style="width:100%" data-a="instalarDoGuia">Instalar o app neste aparelho</button>'}</div>`);
+}
 
 /* ===== Google Drive (Apps Script) ===== */
 let sessao = null; try { sessao = URL_API ? JSON.parse(localStorage.getItem(CH_SESSAO)) : null; } catch (e) {}
@@ -874,6 +945,7 @@ function pvCancelar() {
   return `<button class="pv-volta" data-a="pIr" data-k="agenda">${ic("voltar")} Voltar</button><h1>${pCanc.r ? "Remarcar consulta" : "Cancelar consulta"}</h1><div class="bloco"><p style="font-size:22px;font-weight:700;margin:0">${dLonga(c.data)}</p><p style="font-size:22px;margin:4px 0">às ${c.hora}</p></div><p>${pCanc.r ? "Esta consulta será cancelada e, em seguida, você escolhe um novo horário. O novo horário ainda precisa da aprovação do seu fisioterapeuta." : "Seu fisioterapeuta será avisado."}</p><button class="pv-grande" id="pCancOk" style="background:var(--dan)" data-a="pCancOk">${pCanc.r ? "Cancelar e escolher novo horário" : "Cancelar consulta"}</button>`;
 }
 function rPv() {
+  talvezInstalar();
   const sair = URL_API && !DEMO ? '<button class="pv-sair" data-a="pSair">Sair</button>' : "";
   if (!pvD) { $("pv").innerHTML = `<header class="pv-topo"><div class="marca-l">${LOGO}<div class="marca">FisioAgenda</div></div>${sair}</header><div class="pv-corpo">${pvErro ? `<div class="conflito e">${esc(pvErro)}</div><button class="pv-grande" style="margin-top:14px" data-a="pRecarrega">Tentar de novo</button>` : "<p>Carregando sua agenda...</p>"}</div>`; return; }
   const aviso = pvErro ? `<div class="conflito e" style="margin-bottom:12px">${esc(pvErro)}</div>` : "";
@@ -882,7 +954,7 @@ function rPv() {
 function pvInicio() {
   const n = pvD.consultas.find((c) => ["confirmed", "pending"].includes(c.status) && futura(c));
   const it = [["agenda", "Minha agenda", "agenda"], ["agendar", "Agendar consulta", "mais"], ["orient", "Minhas orientações", "materiais"], ["docs", "Meus documentos", "doc"], ["perfil", "Meu perfil", "perfil"]];
-  return `<section class="pv-prox" aria-label="Próxima consulta">${n ? `<p>Sua próxima consulta</p><h1>${dLonga(n.data)}</h1><div class="pv-h">às ${n.hora}</div><p class="pv-com">${pvD.prof.foto ? `<img class="foto" src="${esc(pvD.prof.foto)}" alt="" width="44" height="44">` : ""}Com ${esc(pvD.prof.nome)}</p><p>${esc(n.endereco)}</p><span class="tag ${n.status}">${STATUS[n.status]}</span>` : "<h1>Você ainda não tem consulta marcada</h1>"}</section><nav class="pv-menu" aria-label="Atalhos">${it.map(([k, t, n]) => `<button data-a="pIr" data-k="${k}">${ic(n)}<span>${t}</span>${ic("seta", "seta")}</button>`).join("")}</nav>`;
+  return `<section class="pv-prox" aria-label="Próxima consulta">${n ? `<p>Sua próxima consulta</p><h1>${dLonga(n.data)}</h1><div class="pv-h">às ${n.hora}</div><p class="pv-com">${pvD.prof.foto ? `<img class="foto" src="${esc(pvD.prof.foto)}" alt="" width="44" height="44">` : ""}Com ${esc(pvD.prof.nome)}</p><p>${esc(n.endereco)}</p><span class="tag ${n.status}">${STATUS[n.status]}</span>` : "<h1>Você ainda não tem consulta marcada</h1>"}</section><nav class="pv-menu" aria-label="Atalhos">${it.map(([k, t, n]) => `<button data-a="pIr" data-k="${k}">${ic(n)}<span>${t}</span>${ic("seta", "seta")}</button>`).join("")}</nav>${instalado() || DEMO ? "" : `<button class="pv-volta" style="margin-top:14px" data-a="instalar">Instalar o app no celular</button>`}`;
 }
 function pvAgenda() {
   const prox = pvD.consultas.filter((c) => futura(c) && c.status !== "done"), ant = pvD.consultas.filter((c) => c.status === "done").reverse();
@@ -920,25 +992,55 @@ document.addEventListener("submit", async (e) => {
   catch (x) { if (x.codigo === "sessao") { try { localStorage.removeItem(CH_SESSAO); } catch (y) {} sessao = null; return mostrarLogin(x.message); } msg(x.message); } finally { b.disabled = false; }
 }, true);
 
-/* ===== Área do administrador: só acessos, nunca dados de pacientes ===== */
+/* ===== Área do administrador: cadastra fisioterapeutas, nunca vê dados de pacientes ===== */
 let admSt = null, admLog = null, admErro = "";
 async function abrirAdmin() { $("app").hidden = true; $("pv").hidden = true; $("adm").hidden = false; rAdm(); await admCarregar(); }
+function admSessaoCaiu(e) { if (e.codigo !== "sessao") return false; try { localStorage.removeItem(CH_SESSAO); } catch (x) {} sessao = null; fechar(); mostrarLogin(e.message); return true; }
 async function admCarregar() {
-  try { const [st, lg] = await Promise.all([api("admStatus", { token: sessao.token }), api("admAuditoria", { token: sessao.token })]); admSt = st; admLog = lg.itens; admErro = ""; }
-  catch (e) { if (e.codigo === "sessao") { try { localStorage.removeItem(CH_SESSAO); } catch (x) {} sessao = null; return mostrarLogin(e.message); } admErro = e.message; }
+  try { const [st, lg] = await Promise.all([api("admListar", { token: sessao.token }), api("admAuditoria", { token: sessao.token })]); admSt = st; admLog = lg.itens; admErro = ""; }
+  catch (e) { if (admSessaoCaiu(e)) return; admErro = e.message; }
   rAdm();
 }
-async function admAcao(acao, extra, ok) { try { admSt = await api(acao, { token: sessao.token, ...(extra || {}) }); toast(ok); const lg = await api("admAuditoria", { token: sessao.token }); admLog = lg.itens; } catch (e) { admErro = e.message; } fechar(); rAdm(); }
+async function admAcao(acao, extra, ok) {
+  try { admSt = await api(acao, { token: sessao.token, ...(extra || {}) }); admErro = ""; toast(ok); fechar(); const lg = await api("admAuditoria", { token: sessao.token }); admLog = lg.itens; }
+  catch (e) { if (admSessaoCaiu(e)) return; fechar(); admErro = e.message; }
+  rAdm();
+}
+const admFisio = (id) => (admSt && admSt.fisios || []).find((f) => f.id === id);
+const quandoAdm = (t) => t ? new Date(t).toLocaleString("pt-BR") : "nunca";
+function situacaoFisio(f) { return f.status === "bloqueado" ? '<span class="tag cancelled">Bloqueado</span>' : f.temSenha ? '<span class="tag Ativo">Ativo</span>' : '<span class="tag pending">Aguardando criar senha</span>'; }
+function cartaoFisio(f) {
+  return `<li class="adm-fisio"><div class="topo-lista"><div><b>${esc(f.nome)}</b><div class="dica" style="margin:2px 0 0">${esc(f.email)}</div></div>${situacaoFisio(f)}</div>
+  <div class="dados"><div><span>Pacientes ativos:</span> ${f.pacientes}</div><div><span>Com acesso ao portal:</span> ${f.pacientesComAcesso}</div><div><span>Último acesso:</span> ${quandoAdm(f.ultimo)}</div><div><span>Aparelhos conectados:</span> ${f.sessoes}</div></div>
+  <div class="acoes-item"><button class="btn" data-a="admEdit" data-id="${f.id}">Editar</button><button class="btn ${f.status === "bloqueado" ? "prim" : "per"}" data-a="admBloq" data-id="${f.id}">${f.status === "bloqueado" ? "Desbloquear" : "Bloquear"}</button><button class="btn" data-a="admEnc" data-id="${f.id}" ${f.sessoes ? "" : "disabled"}>Desconectar aparelhos</button><button class="btn" data-a="admRed" data-id="${f.id}">Redefinir senha</button></div></li>`;
+}
 function rAdm() {
-  const f = admSt && admSt.fisio, quando = (t) => t ? new Date(t).toLocaleString("pt-BR") : "nunca";
-  const situacao = !f ? "" : f.bloqueado ? '<span class="tag cancelled">Bloqueado</span>' : f.temSenha ? '<span class="tag Ativo">Ativo</span>' : '<span class="tag pending">Aguardando criar senha</span>';
+  const l = admSt && admSt.fisios;
   $("adm").innerHTML = `<main><header class="topo-app"><div class="marca-l">${LOGO}<div class="tt"><div class="marca">Administração</div><div class="quem-topo">${esc(sessao.email || "")}</div></div></div><div class="topo-icones"><button class="ico-topo" style="width:auto;padding:0 16px;font-weight:600" data-a="admSair">Sair</button></div></header>
-  <div class="aviso">Esta área gerencia acessos. Ela não mostra pacientes, agenda nem anotações.</div>${admErro ? `<div class="conflito e" style="margin-bottom:12px">${esc(admErro)}</div>` : ""}
-  ${!f ? '<div class="bloco"><p class="vazio">Carregando...</p></div>' : `<div class="bloco"><div class="topo-lista"><h2>Fisioterapeuta</h2>${situacao}</div><div class="dados"><div><span>Nome:</span> ${esc(f.nome)}</div><div><span>E-mail:</span> ${esc(f.email)}</div><div><span>Último acesso:</span> ${quando(f.ultimo)}</div><div><span>Aparelhos conectados:</span> ${f.sessoes}</div><div><span>Pacientes com acesso ao portal:</span> ${admSt.pacientesComAcesso}</div></div>
-  <div class="acoes-item"><button class="btn ${f.bloqueado ? "prim" : "per"}" data-a="admBloq">${f.bloqueado ? "Desbloquear acesso" : "Bloquear acesso"}</button><button class="btn" data-a="admEnc" ${f.sessoes ? "" : "disabled"}>Desconectar aparelhos</button><button class="btn" data-a="admRed">Redefinir senha</button></div><p class="dica">O e-mail e o nome do fisioterapeuta mudam no arquivo do servidor, no Apps Script.</p></div>`}
+  <div class="aviso">Aqui você cadastra e gerencia os fisioterapeutas. Esta área não mostra pacientes, agenda nem anotações.</div>${admErro ? `<div class="conflito e" style="margin-bottom:12px">${esc(admErro)}</div>` : ""}
+  <div class="bloco"><div class="topo-lista"><h2>Fisioterapeutas${l ? ` (${l.length})` : ""}</h2><button class="btn prim" data-a="admNovo">Cadastrar fisioterapeuta</button></div>
+  ${!l ? '<p class="vazio">Carregando...</p>' : l.length ? `<ul class="lista adm-lista">${l.map(cartaoFisio).join("")}</ul>` : '<p class="vazio">Nenhum fisioterapeuta ainda. Cadastre o primeiro: ele recebe um e-mail para criar a senha.</p>'}</div>
   ${formSenha()}
   <div class="bloco"><div class="topo-lista"><h2>Histórico de acessos</h2><button class="link" data-a="admRecarrega">Atualizar</button></div>${admLog && admLog.length ? `<ul class="lista">${admLog.map((x) => `<li><b>${esc(x.quem)}</b>: ${esc(x.acao)}<small>${new Date(x.em).toLocaleString("pt-BR")}</small></li>`).join("")}</ul>` : `<p class="vazio">${admLog ? "Nenhum registro ainda." : "Carregando..."}</p>`}</div></main>`;
 }
+function formFisio(f) {
+  abrir(f ? "Editar fisioterapeuta" : "Cadastrar fisioterapeuta", `<form novalidate class="bloco" data-adm="${f ? f.id : ""}"><label for="aN">Nome completo <span class="ob">*</span></label><input id="aN" name="nome" value="${esc(f ? f.nome : "")}" autocomplete="off" required><label for="aE">E-mail <span class="ob">*</span></label><input id="aE" name="email" type="email" autocapitalize="off" spellcheck="false" value="${esc(f ? f.email : "")}" required>
+  <p class="dica">${f ? "Se mudar o e-mail, os aparelhos dele são desconectados e ele entra com o novo e-mail." : "Ele recebe um e-mail com o link do app. No primeiro acesso, informa este e-mail e cria a própria senha com um código."}</p><div class="erro" id="aErro" hidden></div><div class="acoes-form"><button class="salvar" id="aOk">${f ? "Salvar" : "Cadastrar e enviar convite"}</button></div></form>`);
+  $("aN").focus();
+}
+document.addEventListener("submit", async (e) => {
+  const f = e.target.closest("[data-adm]"); if (!f) return; e.preventDefault(); e.stopImmediatePropagation();
+  const v = Object.fromEntries(new FormData(f)), er = $("aErro"), msg = (t) => { er.textContent = t; er.hidden = !t; };
+  if (v.nome.trim().length < 3) return msg("Informe o nome completo.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.email.trim())) return msg("Informe um e-mail válido.");
+  const b = $("aOk"); b.disabled = true;
+  try {
+    const id = f.dataset.adm, site = location.href.split("#")[0].split("?")[0].replace(/index\.html$/, "");
+    admSt = await api(id ? "admEditarFisio" : "admCriarFisio", { token: sessao.token, id, nome: v.nome.trim(), email: v.email.trim(), site });
+    admErro = ""; fechar(); toast(id ? "Dados salvos" : "Fisioterapeuta cadastrado"); rAdm();
+    const lg = await api("admAuditoria", { token: sessao.token }); admLog = lg.itens; rAdm();
+  } catch (x) { if (admSessaoCaiu(x)) return; msg(x.message); } finally { if (b.isConnected) b.disabled = false; }
+}, true);
 
 /* ===== Login: e-mail, depois senha (ou código no primeiro acesso) ===== */
 let lgEmail = ""; try { lgEmail = localStorage.getItem("fisioagenda-v1:email") || ""; } catch (e) {}
@@ -970,7 +1072,15 @@ function entrouPac(j) { sessao = { token: j.token, perfil: "paciente" }; try { l
 function concluirLogin(j) {
   sessao = { token: j.token, nome: j.nome, email: j.email, papel: j.papel };
   if (j.papel === "admin") { try { localStorage.setItem(CH_SESSAO, JSON.stringify(sessao)); localStorage.setItem("fisioagenda-v1:email", j.email); } catch (e) {} $("login").hidden = true; return abrirAdmin(); }
-  try { localStorage.setItem(CH_SESSAO, JSON.stringify(sessao)); localStorage.setItem("fisioagenda-v1:email", j.email); } catch (e) {}
+  try {
+    // Outro fisioterapeuta neste aparelho: começa sem a cópia local do anterior e baixa a sua do servidor.
+    // Sem dono anotado (versão 1.0 ou uso só no aparelho), os dados locais sobem para quem entrar primeiro.
+    const dono = localStorage.getItem("fisioagenda-v1:dono");
+    const eu = (j.email || "").toLowerCase();
+    if (dono && dono !== eu) { localStorage.removeItem(CHAVE); localStorage.removeItem(CH_SYNC); dados = ler(); }
+    localStorage.setItem("fisioagenda-v1:dono", eu);
+    localStorage.setItem(CH_SESSAO, JSON.stringify(sessao)); localStorage.setItem("fisioagenda-v1:email", j.email);
+  } catch (e) {}
   $("login").hidden = true; $("app").hidden = false; atualizarTudo(); sincronizar();
 }
 async function comBotao(f, fn) { const b = f.querySelector(".salvar"), t = b.textContent; b.disabled = true; b.textContent = "Aguarde..."; try { await fn(); } catch (e) { lgErro(e.message); } finally { if (b.isConnected) { b.disabled = false; b.textContent = t; } } }
@@ -987,6 +1097,7 @@ document.addEventListener("submit", (e) => {
     if (f.dataset.l === "criar") { const fr = senhaFraca(v.lN); if (fr) return lgErro(fr); if (v.lN !== v.lN2) return lgErro("As senhas não são iguais."); concluirLogin(await api("criarSenha", { email: lgEmail, codigo: v.c, senha: v.lN })); }
   });
 });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $("inst") && !$("inst").hidden) fecharInstalar(); });
 document.addEventListener("click", (e) => { const b = e.target.closest("[data-ver]"); if (!b) return; const i = $(b.dataset.ver); const ver = i.type === "password"; i.type = ver ? "text" : "password"; b.textContent = ver ? "Ocultar" : "Mostrar"; });
 document.addEventListener("click", async (e) => {
   const b = e.target.closest("[data-l2]"); if (!b) return;
@@ -994,7 +1105,7 @@ document.addEventListener("click", async (e) => {
 });
 function iniciar() {
   if (typeof semearDemo === "function") semearDemo();
-  const cv = URL_API && location.hash.match(/convite=([a-f0-9]+)/);
+  const cv = URL_API && location.hash.match(/convite=([a-z0-9]+\.[a-f0-9]+)/);
   if (cv) { try { history.replaceState(null, "", location.pathname); } catch (e) {} return telaConvite(cv[1]); }
   if (URL_API && !sessao) return mostrarLogin();
   if (sessao && sessao.perfil === "paciente") return abrirPortal();
@@ -1288,9 +1399,11 @@ const A = {
   registrar(el) { formC(null, { p: el.dataset.p, real: true }); },
   frase(el) { const t = $(el.dataset.alvo); if (!t) return; t.value = (t.value.trim() ? t.value.trim() + " " : "") + el.dataset.t; t.focus(); },
   relCsv: baixarRel,
-  admBloq() { const on = !admSt.fisio.bloqueado; pedirConf(on ? "Bloquear o acesso do fisioterapeuta? Os aparelhos dele serão desconectados. Os pacientes continuam usando o portal." : "Desbloquear o acesso do fisioterapeuta?", on ? "Bloquear acesso" : "Desbloquear acesso", () => admAcao("admBloquear", { bloquear: on }, on ? "Acesso bloqueado" : "Acesso desbloqueado")); },
-  admEnc() { pedirConf("Desconectar todos os aparelhos do fisioterapeuta? Ele precisará entrar de novo com a senha.", "Desconectar aparelhos", () => admAcao("admEncerrar", null, "Aparelhos desconectados")); },
-  admRed() { pedirConf("Redefinir a senha do fisioterapeuta? A senha atual deixa de valer e ele recebe um e-mail para criar outra.", "Redefinir senha", () => admAcao("admRedefinir", null, "Senha redefinida")); },
+  admNovo() { formFisio(); },
+  admEdit(el) { formFisio(admFisio(el.dataset.id)); },
+  admBloq(el) { const f = admFisio(el.dataset.id), on = f.status !== "bloqueado"; pedirConf(on ? `Bloquear o acesso de ${f.nome}? Os aparelhos dele serão desconectados. Os pacientes dele continuam usando o portal.` : `Desbloquear o acesso de ${f.nome}?`, on ? "Bloquear acesso" : "Desbloquear acesso", () => admAcao("admBloquear", { id: f.id, bloquear: on }, on ? "Acesso bloqueado" : "Acesso desbloqueado")); },
+  admEnc(el) { const f = admFisio(el.dataset.id); pedirConf(`Desconectar todos os aparelhos de ${f.nome}? Ele precisará entrar de novo com a senha.`, "Desconectar aparelhos", () => admAcao("admEncerrar", { id: f.id }, "Aparelhos desconectados")); },
+  admRed(el) { const f = admFisio(el.dataset.id); pedirConf(`Redefinir a senha de ${f.nome}? A senha atual deixa de valer e ele recebe um e-mail para criar outra.`, "Redefinir senha", () => admAcao("admRedefinir", { id: f.id }, "Senha redefinida")); },
   admRecarrega() { admCarregar(); },
   async admSair() { try { await api("admSair", { token: sessao.token }); } catch (e) {} try { localStorage.removeItem(CH_SESSAO); } catch (e) {} location.reload(); },
   confOk() { const f = confFn; confFn = null; if (f) f(); },
@@ -1298,7 +1411,9 @@ const A = {
   tiraB(el) { dados.bloqueios = dados.bloqueios.filter((b) => b.id !== el.dataset.id); gravar(); atualizarTudo(); },
   tiraE(el) { dados.excecoes = dados.excecoes.filter((b) => b.id !== el.dataset.id); gravar(); atualizarTudo(); },
   backup: baixar, importar() { $("arq").click(); },
-  menu: abrirMenu, fecharMenu, busca: abrirBusca, instalar: abrirInstalar, sairConta: sairConta, syncAgora() { fecharMenu(); sincronizar(); },
+  menu: abrirMenu, fecharMenu, busca: abrirBusca, instalar() { abrirInstalar(false); }, comoUsar: abrirComoUsar, instalarDoGuia() { fechar(); abrirInstalar(false); },
+  instFechar: fecharInstalar, instPlat(el) { instPlat = el.dataset.k; abrirInstalar(false); },
+  async instAgora() { const p = pedidoInstalar; if (!p) return; p.prompt(); try { const r = await p.userChoice; if (r.outcome === "accepted") { pedidoInstalar = null; fecharInstalar(); } } catch (e) {} }, sairConta: sairConta, syncAgora() { fecharMenu(); sincronizar(); },
   dicaOk(el) { try { const v = JSON.parse(localStorage.getItem(CH_DICAS) || "{}"); v[el.dataset.k] = 1; localStorage.setItem(CH_DICAS, JSON.stringify(v)); } catch (x) {} el.parentElement.remove(); },
   mAcao(el) { fecharMenu(); A[el.dataset.m](el); },
 };
@@ -1328,7 +1443,12 @@ document.addEventListener("change", (e) => {
 });
 
 iniciar();
-if ("serviceWorker" in navigator && /^https:|localhost/.test(location.href)) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+if ("serviceWorker" in navigator && /^https:|localhost/.test(location.href)) addEventListener("load", () => {
+  // Quando uma versão nova assume, recarrega uma vez para mostrá-la.
+  let recarregou = false; const tinha = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (tinha && !recarregou && !dlg.open) { recarregou = true; location.reload(); } });
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then((r) => r.update()).catch(() => {});
+});
 </script>
 </body>
 </html>
